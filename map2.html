@@ -27,8 +27,8 @@
         const map = new maplibregl.Map({
             container: 'map',
             style: 'https://demotiles.maplibre.org/style.json',
-            center: [0, 0],
-            zoom: 2
+            center: [-79.3832, 43.6532], // Coordinates for Toronto
+            zoom: 10
         });
 
         map.on('load', () => {
@@ -47,10 +47,10 @@
                         ['linear'],
                         ['get', 'lowincomeper'],
                         0, '#ffffb2',
-                        0.2, '#fecc5c',
-                        0.4, '#fd8d3c',
-                        0.6, '#f03b20',
-                        0.8, '#bd0026'
+                        0.1, '#fecc5c',
+                        0.2, '#fd8d3c',
+                        0.3, '#f03b20',
+                        0.4, '#bd0026'
                     ],
                     'fill-opacity': 0.8
                 }
