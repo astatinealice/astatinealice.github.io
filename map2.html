@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Full Screen Map</title>
+    <link href="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <script src="https://unpkg.com/maplibre-gl@latest/dist/maplibre-gl.js"></script>
+    <script>
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://demotiles.maplibre.org/style.json',
+            center: [0, 0],
+            zoom: 2
+        });
+
+        map.on('load', () => {
+            map.addSource('neighborhoods', {
+                type: 'geojson',
+                data: 'assets/neighborhood-20250105.geojson'
+            });
+
+            map.addLayer({
+                'id': 'neighborhoods-layer',
+                'type': 'fill',
+                'source': 'neighborhoods',
+                'paint': {
+                    'fill-color': [
+                        'interpolate',
+                        ['linear'],
+                        ['get', 'lowincomeper'],
+                        0, '#ffffb2',
+                        0.2, '#fecc5c',
+                        0.4, '#fd8d3c',
+                        0.6, '#f03b20',
+                        0.8, '#bd0026'
+                    ],
+                    'fill-opacity': 0.8
+                }
+            });
+        });
+    </script>
+</body>
+</html>
