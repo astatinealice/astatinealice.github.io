@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toronto - Interactive Map</title>
+    <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 1;
+        }
+
+        button {
+            margin: 5px;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        /* Welcome Panel Styling */
+        .welcome-panel {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            /* Semi-transparent background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 2;
+        }
+
+        .welcome-content {
+            background: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 8px;
+            max-width: 500px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .welcome-content h2 {
+            margin-bottom: 10px;
+        }
+
+        .welcome-button {
+            margin-top: 15px;
+            padding: 8px 16px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .welcome-button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Welcome Panel -->
+    <div class="welcome-panel" id="welcomePanel">
+        <div class="welcome-content">
+            <h2>Welcome to the Toronto Interactive Map 🏙️</h2>
+            <p>Explore Toronto’s neighborhoods with data on:</p>
+            <ul style="text-align: left; display: inline-block;">
+                <li>Low-income population</li>
+                <li>Immigrant percentage</li>
+                <li>Subsidized housing programs</li>
+            </ul>
+            <p>Click on a neighborhood to see details.</p>
+            <button class="welcome-button" onclick="closeWelcomePanel()">Start Exploring 🚀</button>
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div id="map"></div>
+
+    <!-- Buttons to Toggle Layers -->
+    <div class="map-overlay">
+        <button onclick="toggleLayer('lowincome-layer')">Toggle Low-Income Layer</button>
+        <button onclick="toggleLayer('immigrant-layer')">Toggle Immigrant Layer</button>
+        <button onclick="toggleLayer('subsidized-layer')">Toggle Subsidized Housing Layer</button>
+    </div>
+
+    <script>
+        function closeWelcomePanel() {
+            document.getElementById('welcomePanel').style.display = 'none';
+        }
+
+        const map = new maplibregl.Map({
+            container: 'map',
+            style: 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json',
+            center: [-79.3832, 43.6532],
+            zoom: 12
+        });
+
+        map.addControl(new maplibregl.NavigationControl());
+
+        fetch('assets/neighborhood-sub-20250105.geojson')
+            .then(response => response.json())
+            .then(data => {
+                let lowincomeValues = data.features
+                    .map(f => f.properties.lowincomeper)
+                    .filter(v => v !== null && v !== undefined);
+                const minLowIncome = Math.min(...lowincomeValues);
+                const maxLowIncome = Math.max(...lowincomeValues);
+
+                data.features.forEach(feature => {
+                    if (feature.properties.immigrants !== null && feature.properties.totalpop !== null) {
+                        feature.properties.immigrantper = feature.properties.immigrants / feature.properties.totalpop * 100;
+                    } else {
+                        feature.properties.immigrantper = null;
+                    }
+                });
+
+                let immigrantValues = data.features
+                    .map(f => f.properties.immigrantper)
+                    .filter(v => v !== null && v !== undefined);
+                const minImmigrants = Math.min(...immigrantValues);
+                const maxImmigrants = Math.max(...immigrantValues);
+
+                let subsidizedValues = data.features
+                    .map(f => f.properties["num-subsidized"])
+                    .filter(v => v !== null && v !== undefined);
+                const minSubsidized = Math.min(...subsidizedValues);
+                const maxSubsidized = Math.max(...subsidizedValues);
+
+                map.addSource('neighborhoods', {
+                    type: 'geojson',
+                    data: data
+                });
+
+                map.addLayer({
+                    id: 'lowincome-layer',
+                    type: 'fill',
+                    source: 'neighborhoods',
+                    paint: {
+                        'fill-color': [
+                            'interpolate', ['linear'], ['get', 'lowincomeper'],
+                            minLowIncome, '#d0e1f9',
+                            (minLowIncome + maxLowIncome) / 2, '#4a90e2',
+                            maxLowIncome, '#003f5c'
+                        ],
+                        'fill-opacity': 0.7
+                    }
+                });
+
+                map.addLayer({
+                    id: 'immigrant-layer',
+                    type: 'fill',
+                    source: 'neighborhoods',
+                    paint: {
+                        'fill-color': [
+                            'interpolate', ['linear'], ['get', 'immigrantper'],
+                            minImmigrants, '#d3f9d8',
+                            (minImmigrants + maxImmigrants) / 2, '#63c37c',
+                            maxImmigrants, '#004c1f'
+                        ],
+                        'fill-opacity': 0.7
+                    },
+                    layout: { 'visibility': 'none' }
+                });
+
+                map.addLayer({
+                    id: 'subsidized-layer',
+                    type: 'fill',
+                    source: 'neighborhoods',
+                    paint: {
+                        'fill-color': [
+                            'interpolate', ['linear'], ['get', 'num-subsidized'],
+                            minSubsidized, '#ffe0b2',
+                            (minSubsidized + maxSubsidized) / 2, '#ff9800',
+                            maxSubsidized, '#e65100'
+                        ],
+                        'fill-opacity': 0.7
+                    },
+                    layout: { 'visibility': 'none' }
+                });
+
+                map.addLayer({
+                    id: 'border-layer',
+                    type: 'line',
+                    source: 'neighborhoods',
+                    paint: { 'line-color': '#ffffff', 'line-width': 1 }
+                });
+
+                map.on('click', 'lowincome-layer', (e) => showPopup(e));
+                map.on('click', 'immigrant-layer', (e) => showPopup(e));
+                map.on('click', 'subsidized-layer', (e) => showPopup(e));
+
+                function showPopup(e) {
+                    const properties = e.features[0].properties;
+                    new maplibregl.Popup()
+                        .setLngLat(e.lngLat)
+                        .setHTML(`
+                            <strong>${properties.name || 'Unknown'}</strong><br>
+                            Population: ${properties.totalpop || 'N/A'}<br>
+                            Immigrants: ${properties.immigrants || 'N/A'}<br>
+                            Low-Income: ${properties.lowincomeper || 'N/A'}%<br>
+                            Subsidized Housing: ${properties["num-subsidized"] || 'N/A'}
+                        `)
+                        .addTo(map);
+                }
+            });
+
+        function toggleLayer(layerId) {
+            const visibility = map.getLayoutProperty(layerId, 'visibility');
+            map.setLayoutProperty(layerId, 'visibility', visibility === 'visible' ? 'none' : 'visible');
+        }
+    </script>
+</body>
+
+</html>
