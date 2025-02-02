@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toronto - Dual Map Comparison</title>
+    <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+    <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .map-container {
+            display: flex;
+            height: 100vh;
+            width: 100%;
+        }
+
+        .map-box {
+            width: 50%;
+            height: 100%;
+            position: relative;
+        }
+
+        #map-left,
+        #map-right {
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-title {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 16px;
+            z-index: 10;
+        }
+
+        .map-overlay {
+            position: absolute;
+            top: 50px;
+            left: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            z-index: 5;
+        }
+
+        .map-overlay label {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .map-overlay input[type="checkbox"] {
+            accent-color: #007bff;
+            width: 16px;
+            height: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="map-container">
+        <div class="map-box">
+            <div class="map-title">Low Income & Immigrant Population</div>
+            <div id="map-left"></div>
+            <div class="map-overlay">
+                <label>
+                    <input type="checkbox" id="lowIncomeCheckbox" onchange="toggleLayer('lowincome-layer')"> Low Income
+                </label>
+                <label>
+                    <input type="checkbox" id="immigrantCheckbox" onchange="toggleLayer('immigrant-layer')"> Immigrant
+                    Population
+                </label>
+            </div>
+        </div>
+        <div class="map-box">
+            <div class="map-title">Subsidized Housing Programs</div>
+            <div id="map-right"></div>
+            <div class="map-overlay">
+                <label>
+                    <input type="checkbox" id="housingCheckbox" onchange="toggleLayer('housing-points')" checked>
+                    Subsidized Housing
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const geojsonPath = "assets/neighborhood-sub-20250105.geojson";
+        const housingGeojsonPath = "assets/sh.geojson";
+        let mapLeft, mapRight;
+        let syncing = false;
+
+        window.onload = function () {
+            // Initialize left map (Low Income & Immigrant Population)
+            mapLeft = new maplibregl.Map({
+                container: "map-left",
+                style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+                center: [-79.3832, 43.6532],
+                zoom: 12
+            });
+
+            // Initialize right map (Subsidized Housing)
+            mapRight = new maplibregl.Map({
+                container: "map-right",
+                style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+                center: [-79.3832, 43.6532],
+                zoom: 12
+            });
+
+            mapRight.addControl(new maplibregl.NavigationControl());
+
+            // Synchronize map movements
+            function syncMaps(map1, map2) {
+                map1.on("moveend", () => {
+                    if (!syncing) {
+                        syncing = true;
+                        setTimeout(() => {
+                            map2.jumpTo({ center: map1.getCenter(), zoom: map1.getZoom() });
+                            syncing = false;
+                        }, 50);
+                    }
+                });
+
+                map2.on("moveend", () => {
+                    if (!syncing) {
+                        syncing = true;
+                        setTimeout(() => {
+                            map1.jumpTo({ center: map2.getCenter(), zoom: map2.getZoom() });
+                            syncing = false;
+                        }, 50);
+                    }
+                });
+            }
+
+            syncMaps(mapLeft, mapRight);
+
+            fetch(geojsonPath)
+                .then(response => response.json())
+                .then(data => {
+                    mapLeft.addSource("neighborhoods", { type: "geojson", data });
+                    mapRight.addSource("neighborhoods", { type: "geojson", data });
+
+                    // Low Income Layer
+                    mapLeft.addLayer({
+                        id: "lowincome-layer",
+                        type: "fill",
+                        source: "neighborhoods",
+                        paint: {
+                            "fill-color": ["interpolate", ["linear"], ["get", "lowincomeper"], 10, "#d0e1f9", 50, "#003f5c"],
+                            "fill-opacity": 0.7
+                        }
+                    });
+
+                    // Immigrant Percentage Layer (computed dynamically)
+                    mapLeft.addLayer({
+                        id: "immigrant-layer",
+                        type: "fill",
+                        source: "neighborhoods",
+                        paint: {
+                            "fill-color": ["interpolate", ["linear"], ["/", ["get", "immigrants"], ["get", "totalpop"]], 0, "#d3f9d8", 0.5, "#004c1f"],
+                            "fill-opacity": 0.5
+                        },
+                        layout: { visibility: "none" }
+                    });
+
+                    // Subsidized Housing Layer
+                    mapRight.addLayer({
+                        id: "subsidized-layer",
+                        type: "fill",
+                        source: "neighborhoods",
+                        paint: {
+                            "fill-color": ["interpolate", ["linear"], ["get", "num-subsidized"], 0, "#ffe0b2", 50, "#e65100"],
+                            "fill-opacity": 0.7
+                        }
+                    });
+                });
+
+            fetch(housingGeojsonPath)
+                .then(response => response.json())
+                .then(data => {
+                    mapRight.addSource("subsidized-housing", { type: "geojson", data });
+
+                    mapRight.addLayer({
+                        id: "housing-points",
+                        type: "circle",
+                        source: "subsidized-housing",
+                        paint: {
+                            "circle-radius": 6,
+                            "circle-color": "#ff0000",
+                            "circle-stroke-width": 1,
+                            "circle-stroke-color": "#fff"
+                        }
+                    });
+                });
+        };
+
+        function toggleLayer(layerId) {
+            const map = layerId === "housing-points" ? mapRight : mapLeft;
+            const visibility = map.getLayoutProperty(layerId, "visibility") === "visible" ? "none" : "visible";
+            map.setLayoutProperty(layerId, "visibility", visibility);
+        }
+    </script>
+
+</body>
+
+</html>
