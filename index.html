@@ -305,10 +305,10 @@
 
                     mapLeft.addLayer({
                         id: "border-layer",
-                        type: "fill",  // 改成 fill，而不是 line
+                        type: "fill",
                         source: "neighborhoods",
                         paint: {
-                            "fill-color": "transparent", // 透明填充，确保可以点击
+                            "fill-color": "transparent",
                             "fill-outline-color": "#ffffff"
                         }
                     }, 'watername_ocean');
@@ -333,10 +333,10 @@
                         const neighborhoodName = properties.name || "Unknown";
                         const neighborhoodDesc = properties.desc || "Unknown";
 
-                        // 处理 neighborhood 名称的 URL 编码，防止空格和特殊字符出错
+
                         const encodedNeighborhood = encodeURIComponent(neighborhoodDesc);
 
-                        // 生成 Toronto 官方的 Neighborhood Profile 页面 URL
+
                         const profileURL = `https://www.toronto.ca/city-government/data-research-maps/neighbourhoods-communities/neighbourhood-profiles/find-your-neighbourhood/neighbourhood-profile-detail/?id=NeighbourhoodProfiles-CityofToronto/Snapshot110&title=Neighbourhood%20Profile%20Data#type=filtered&filter=Select+a+Neighbourhood&value=${encodedNeighborhood}`;
 
                         new maplibregl.Popup()
@@ -468,26 +468,26 @@
             const lowIncomeLayer = "lowincome-layer";
             const immigrantLayer = "immigrant-layer";
 
-            // 获取复选框
+
             const lowIncomeCheckbox = document.querySelector("input[value='lowincome']");
             const immigrantCheckbox = document.querySelector("input[value='immigrant']");
 
             if (layerId === lowIncomeLayer) {
-                // 根据复选框的状态设置图层的可见性
+
                 map.setLayoutProperty(lowIncomeLayer, "visibility", isChecked ? "visible" : "none");
-                // 如果 Low Income 被选中，隐藏 Immigrant Population
+
                 if (isChecked) {
                     map.setLayoutProperty(immigrantLayer, "visibility", "none");
-                    // 更新 Immigrant Population 复选框状态
+
                     immigrantCheckbox.checked = false;
                 }
             } else if (layerId === immigrantLayer) {
-                // 根据复选框的状态设置图层的可见性
+
                 map.setLayoutProperty(immigrantLayer, "visibility", isChecked ? "visible" : "none");
-                // 如果 Immigrant Population 被选中，隐藏 Low Income
+
                 if (isChecked) {
                     map.setLayoutProperty(lowIncomeLayer, "visibility", "none");
-                    // 更新 Low Income 复选框状态
+
                     lowIncomeCheckbox.checked = false;
                 }
             }
