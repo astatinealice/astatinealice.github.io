@@ -148,11 +148,12 @@
             <button class="welcome-button" onclick="closeWelcomePanel()">Start Exploring 🚀</button>
         </div>
     </div>
-
+<!-- Map -->
     <div class="map-container">
         <div class="map-box">
             <div class="map-title">Low Income & Immigrant Population</div>
             <div id="map-left"></div>
+             <!-- Map layer selection boxes -->
             <div class="map-overlay">
                 <label>
                     <input type="checkbox" value="lowincome"
@@ -177,7 +178,7 @@
     </div>
 
     <script>
-
+         //close welcome panel
         function closeWelcomePanel() {
             document.getElementById('welcomePanel').style.display = 'none';
         }
@@ -187,10 +188,9 @@
         let mapLeft = null;
         let mapRight = null;
         let syncing = false;
-
+         //load everything after window loads
         window.onload = function () {
-
-
+             //define two maps
             mapLeft = new maplibregl.Map({
                 container: "map-left",
                 style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
@@ -204,9 +204,9 @@
                 center: [-79.3832, 43.6532],
                 zoom: 12
             });
-
+             //load navigation panel
             mapRight.addControl(new maplibregl.NavigationControl());
-
+             //synchronize two maps
             function syncMaps(map1, map2) {
                 map1.on("moveend", () => {
                     if (!syncing) {
@@ -230,11 +230,11 @@
             }
 
             syncMaps(mapLeft, mapRight);
-
-
+             //load data
             fetch(geojsonPath)
                 .then(response => response.json())
                 .then(data => {
+                     //pre-process data for loading
 
                     let lowincomeValues = data.features.map(f => f.properties.lowincomeper).filter(v => v !== null && v !== undefined);
                     const minLowIncome = Math.min(...lowincomeValues);
@@ -255,10 +255,10 @@
                     let subsidizedValues = data.features.map(f => f.properties["num-subsidized"]).filter(v => v !== null && v !== undefined);
                     const minSubsidized = Math.min(...subsidizedValues);
                     const maxSubsidized = Math.max(...subsidizedValues);
-
+                     //add two data sources
                     mapLeft.addSource("neighborhoods", { type: "geojson", data });
                     mapRight.addSource("neighborhoods", { type: "geojson", data });
-
+                     //add low-income layer
                     mapLeft.addLayer({
                         id: 'lowincome-layer',
                         type: 'fill',
@@ -274,7 +274,7 @@
                         },
                         layout: { 'visibility': 'visible' }
                     }, 'watername_ocean');
-
+                     //add immigrant layer
                     mapLeft.addLayer({
                         id: 'immigrant-layer',
                         type: 'fill',
@@ -290,7 +290,7 @@
                         },
                         layout: { 'visibility': 'none' }
                     }, 'watername_ocean');
-
+                     //add subsidized housing layer
                     mapRight.addLayer({
                         id: 'subsidized-layer',
                         type: 'fill',
@@ -308,7 +308,7 @@
                     }, 'watername_ocean');
 
 
-
+                    //add borders
                     mapLeft.addLayer({
                         id: "border-layer",
                         type: "fill",
@@ -331,7 +331,7 @@
 
 
 
-
+                    //add click function to borders
                     mapLeft.on("click", "border-layer", (e) => {
                         if (!e.features || e.features.length === 0) return;
 
@@ -342,9 +342,9 @@
 
                         const encodedNeighborhood = encodeURIComponent(neighborhoodDesc);
 
-
+                         //default profile link of each neighborhood 
                         const profileURL = `https://www.toronto.ca/city-government/data-research-maps/neighbourhoods-communities/neighbourhood-profiles/find-your-neighbourhood/neighbourhood-profile-detail/?id=NeighbourhoodProfiles-CityofToronto/Snapshot110&title=Neighbourhood%20Profile%20Data#type=filtered&filter=Select+a+Neighbourhood&value=${encodedNeighborhood}`;
-
+                         //handle pop-up
                         new maplibregl.Popup()
                             .setLngLat(e.lngLat)
                             .setHTML(`
@@ -373,7 +373,7 @@
 
 
                     });
-
+                    //changers cursor to pointer
                     mapLeft.on('mouseenter', 'border-layer', () => {
                         mapLeft.getCanvas().style.cursor = 'pointer';
                     });
@@ -388,7 +388,7 @@
 
 
 
-
+          //load subsidized housing data
             fetch(housingGeojsonPath)
                 .then(response => response.json())
                 .then(data => {
@@ -402,9 +402,9 @@
                             break;
                         }
                     }
-
+                    //add subsidized housing data to map
                     mapRight.addSource("subsidized-housing", { type: "geojson", data });
-
+                    //add subsidized housing points
                     mapRight.addLayer({
                         id: "housing-points",
                         type: "circle",
@@ -417,9 +417,9 @@
                         },
                         layout: { visibility: "visible" },
                     });
-
+                     //make each program clickable
                     mapRight.on("click", "housing-points", (e) => {
-                        e.originalEvent.stopPropagation(); // 阻止事件传播，防止 neighborhood popup 触发
+                        e.originalEvent.stopPropagation(); 
 
                         const properties = e.features[0].properties;
                         new maplibregl.Popup({ closeOnClick: true })
@@ -449,8 +449,7 @@
                                 </div>
                             `).addTo(mapRight);
                     });
-
-
+                     //make cursor a pointer
                     mapRight.on('mouseenter', 'housing-points', () => {
                         mapRight.getCanvas().style.cursor = 'pointer';
                     });
@@ -463,13 +462,13 @@
 
 
                 });
-
+             //hide information panel on the right
             var maplogos = document.getElementsByClassName("maplibregl-ctrl-bottom-right");
             if (maplogos.length > 0) {
                 maplogos[0].style.display = "none";
             }
         };
-
+         //make layer toggleable
         function toggleLayer(map, layerId, isChecked) {
             const lowIncomeLayer = "lowincome-layer";
             const immigrantLayer = "immigrant-layer";
