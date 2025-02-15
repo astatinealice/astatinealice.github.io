@@ -1,13 +1,20 @@
 <!DOCTYPE html>
+<!-- Defines the document type and HTML language -->
 <html lang="en">
-
 <head>
+     <!-- Sets the character encoding for the document to UTF-8 -->
     <meta charset="UTF-8">
+       <!-- Ensures the page is responsive and adjusts its layout to the viewport width -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <!-- Sets the title of the webpage -->
     <title>Toronto - Dual Map Comparison</title>
+     <!-- Loads the MapLibre GL JS library -->
     <script src="https://unpkg.com/maplibre-gl/dist/maplibre-gl.js"></script>
+     <!-- Loads the MapLibre GL CSS stylesheet -->
     <link href="https://unpkg.com/maplibre-gl/dist/maplibre-gl.css" rel="stylesheet" />
     <style>
+        /* CSS styles for the HTML elements */
+        /* Makes map occupy screen */
         html,
         body {
             margin: 0;
@@ -28,12 +35,13 @@
             height: 100%;
             position: relative;
         }
-
+        /* Creates two maps */
         #map-left,
         #map-right {
             width: 100%;
             height: 100%;
         }
+        /* Creates style sheet for map titles */
 
         .map-title {
             position: absolute;
@@ -47,6 +55,7 @@
             font-size: 16px;
             z-index: 1;
         }
+        /* */
 
         .map-overlay {
             position: absolute;
@@ -72,7 +81,6 @@
 
         .map-overlay input[type="checkbox"] {
             accent-color: #007bff;
-            /* 让复选框变成蓝色 */
             width: 16px;
             height: 16px;
         }
@@ -119,6 +127,7 @@
         .welcome-button:hover {
             background-color: #0056b3;
         }
+        /* Hide a map information box */
 
         .maplibregl-ctrl-bottom-right {
             z-index: 1;
@@ -132,12 +141,9 @@
     <div class="welcome-panel" id="welcomePanel">
         <div class="welcome-content">
             <h2>Welcome to the Toronto Interactive Map 🏙️</h2>
-            <p>Explore Toronto’s neighborhoods with data on:</p>
-            <ul style="text-align: left; display: inline-block;">
-                <li>Low-income population</li>
-                <li>Immigrant percentage</li>
-                <li>Subsidized housing programs</li>
-            </ul>
+            <p>This map was made through data acquired from Toronto Open Source 2021. 
+                I hope that this map can aid comparisons and visualizations of the relationship between immigration and subsidized housing for research.
+            </p>
             <p>Click on a neighborhood to see details.</p>
             <button class="welcome-button" onclick="closeWelcomePanel()">Start Exploring 🚀</button>
         </div>
